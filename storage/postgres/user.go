@@ -138,7 +138,7 @@ func (r *taskRepo) ListOverdue(now string) ([]*pb.Task, int64, error) {
 		tasks = append(tasks, &task)
 	}
 
-	err = r.db.QueryRow(`SELECT count(*) FROM tasks`).Scan(&count)
+	err = r.db.QueryRow(`SELECT count(*) FROM tasks where deadline >= $1`, now).Scan(&count)
 	if err != nil {
 		return nil, 0, err
 	}
