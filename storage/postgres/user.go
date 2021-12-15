@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 
@@ -113,7 +112,7 @@ func (r *taskRepo) Delete(id int64) error {
 	return nil
 }
 
-func (r *taskRepo) ListOverdue(now time.Time) ([]*pb.Task, int64, error) {
+func (r *taskRepo) ListOverdue(now string) ([]*pb.Task, int64, error) {
 
 	rows, err := r.db.Queryx(
 		`SELECT id, assignee, title, summary, deadline, status FROM tasks where deadline >= $1`,

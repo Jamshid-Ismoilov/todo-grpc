@@ -1,8 +1,6 @@
 package repo
 
 import (
-	"time"
-
 	pb "github.com/Jamshid-Ismoilov/todo-grpc/genproto"
 )
 
@@ -13,5 +11,5 @@ type TaskStorageI interface {
 	List(page, limit int64) ([]*pb.Task, int64, error)
 	Update(pb.Task) (pb.Task, error)
 	Delete(id int64) error
-	ListOverdue(now time.Time) ([]*pb.Task, int64, error)
+	ListOverdue(now string) ([]*pb.Task, int64, error)
 }
