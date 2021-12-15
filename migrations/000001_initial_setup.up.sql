@@ -1,5 +1,8 @@
-CREATE TABLE IF NOT EXISTS users(
+CREATE TABLE IF NOT EXISTS tasks(
     id SERIAL Primary Key,
-    first_name VARCHAR(50),
-    last_name VARCHAR(50)
+    assignee varchar(64),
+    title varchar(64),
+    summary varchar(64),
+    deadline timestamp default current_timestamp,
+    status varchar(64),
 );

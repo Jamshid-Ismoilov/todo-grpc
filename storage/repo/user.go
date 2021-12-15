@@ -1,14 +1,14 @@
 package repo
 
 import (
-	pb "github.com/rustagram/template-service/genproto"
+	pb "github.com/Jamshid-Ismoilov/todo-grpc/genproto"
 )
 
-// UserStorageI ...
-type UserStorageI interface {
-	Create(pb.User) (pb.User, error)
-	Get(id int64) (pb.User, error)
-	List(page, limit int64) ([]*pb.User, int64, error)
-	Update(pb.User) (pb.User, error)
+// TaskStorageI ...
+type TaskStorageI interface {
+	Create(pb.Task) (pb.Task, error)
+	Get(id int64) (pb.Task, error)
+	List(page, limit int64) ([]*pb.Task, int64, error)
+	Update(pb.Task) (pb.Task, error)
 	Delete(id int64) error
 }

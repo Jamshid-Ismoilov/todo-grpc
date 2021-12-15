@@ -5,12 +5,12 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/rustagram/template-service/config"
-	pb "github.com/rustagram/template-service/genproto"
-	"github.com/rustagram/template-service/pkg/db"
-	"github.com/rustagram/template-service/pkg/logger"
-	"github.com/rustagram/template-service/service"
-	"github.com/rustagram/template-service/storage"
+	"github.com/Jamshid-Ismoilov/todo-grpc/config"
+	pb "github.com/Jamshid-Ismoilov/todo-grpc/genproto"
+	"github.com/Jamshid-Ismoilov/todo-grpc/pkg/db"
+	"github.com/Jamshid-Ismoilov/todo-grpc/pkg/logger"
+	"github.com/Jamshid-Ismoilov/todo-grpc/service"
+	"github.com/Jamshid-Ismoilov/todo-grpc/storage"
 )
 
 func main() {
@@ -36,7 +36,7 @@ func main() {
 
 	pgStorage := storage.NewStoragePg(connDB)
 
-	userService := service.NewUserService(pgStorage, log)
+	userService := service.NewTaskService(pgStorage, log)
 
 	lis, err := net.Listen("tcp", cfg.RPCPort)
 	if err != nil {
@@ -44,7 +44,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterUserServiceServer(s, userService)
+	pb.RegisterTaskServiceServer(s, userService)
 	log.Info("main: server running",
 		logger.String("port", cfg.RPCPort))
 

@@ -5,51 +5,51 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	pb "github.com/rustagram/template-service/genproto"
+	pb "github.com/Jamshid-Ismoilov/todo-grpc/genproto"
 )
 
-type userRepo struct {
+type taskRepo struct {
 	db *sqlx.DB
 }
 
-// NewUserRepo ...
-func NewUserRepo(db *sqlx.DB) *userRepo {
-	return &userRepo{db: db}
+// NewTaskRepo ...
+func NewTaskRepo(db *sqlx.DB) *taskRepo {
+	return &taskRepo{db: db}
 }
 
-func (r *userRepo) Create(user pb.User) (pb.User, error) {
+func (r *taskRepo) Create(task pb.Task) (pb.Task, error) {
 	var id int64
 	err := r.db.QueryRow(`
-        INSERT INTO users(first_name, last_name)
-        VALUES ($1,$2) returning id`, user.FirstName, user.LastName).Scan(&id)
+        INSERT INTO tasks(assignee, title, summary, deadline, status)
+        VALUES ($1,$2,$3, $4, $5) returning id`, task.Assignee, task.Title, task.Summary, task.Deadline, task.Status).Scan(&id)
 	if err != nil {
-		return pb.User{}, err
+		return pb.Task{}, err
 	}
 
-	user, err = r.Get(id)
+	task, err = r.Get(id)
 	if err != nil {
-		return pb.User{}, err
+		return pb.Task{}, err
 	}
 
-	return user, nil
+	return task, nil
 }
 
-func (r *userRepo) Get(id int64) (pb.User, error) {
-	var user pb.User
+func (r *taskRepo) Get(id int64) (pb.Task, error) {
+	var task pb.Task
 	err := r.db.QueryRow(`
-        SELECT id, first_name, last_name FROM users
-        WHERE id=$1`, id).Scan(&user.Id, &user.FirstName, &user.LastName)
+        SELECT id, assignee, title, summary, deadline, status FROM tasks
+        WHERE id=$1`, id).Scan(&task.Id, &task.Assignee, &task.Title, &task.Summary, &task.Deadline, &task.Status)
 	if err != nil {
-		return pb.User{}, err
+		return pb.Task{}, err
 	}
 
-	return user, nil
+	return task, nil
 }
 
-func (r *userRepo) List(page, limit int64) ([]*pb.User, int64, error) {
+func (r *taskRepo) List(page, limit int64) ([]*pb.Task, int64, error) {
 	offset := (page - 1) * limit
 	rows, err := r.db.Queryx(
-		`SELECT id, first_name, last_name FROM users LIMIT $1 OFFSET $2`,
+		`SELECT id, assignee, title, summary, deadline, status FROM tasks LIMIT $1 OFFSET $2`,
 		limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -60,27 +60,27 @@ func (r *userRepo) List(page, limit int64) ([]*pb.User, int64, error) {
 	defer rows.Close() // nolint:errcheck
 
 	var (
-		users []*pb.User
-		user  pb.User
+		tasks []*pb.Task
+		task  pb.Task
 		count int64
 	)
 	for rows.Next() {
-		err = rows.Scan(&user.Id, &user.FirstName, &user.LastName)
+		err = rows.Scan(&task.Id, &task.Assignee, &task.Title, &task.Summary, &task.Deadline, &task.Status)
 		if err != nil {
 			return nil, 0, err
 		}
-		users = append(users, &user)
+		tasks = append(tasks, &task)
 	}
 
-	err = r.db.QueryRow(`SELECT count(*) FROM users`).Scan(&count)
+	err = r.db.QueryRow(`SELECT count(*) FROM tasks`).Scan(&count)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return users, count, nil
+	return tasks, count, nil
 }
 
-func (r *userRepo) Update(user pb.User) (pb.User, error) {
+func (r *taskRepo) Update(task pb.Task) (pb.Task, error) {
 	result, err := r.db.Exec(`UPDATE users SET first_name=$1, last_name=$2 WHERE id=$3`,
 		user.FirstName, user.LastName, user.Id)
 	if err != nil {

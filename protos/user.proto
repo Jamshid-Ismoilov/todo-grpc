@@ -1,21 +1,24 @@
 syntax = "proto3";
 
-package user;
+package task;
 
-service UserService {
-    rpc Create(User) returns (User);
-    rpc Get(ByIdReq) returns (User);
+service TaskService {
+    rpc Create(Task) returns (Task);
+    rpc Get(ByIdReq) returns (Task);
     rpc List(ListReq) returns (ListResp);
-    rpc Update(User) returns (User);
+    rpc Update(Task) returns (Task);
     rpc Delete(ByIdReq) returns (EmptyResp);
 }
 
 message EmptyResp {}
 
-message User {
+message Task {
     int64  id = 1;
-    string first_name = 2;
-    string last_name = 3;
+    string assignee = 2;
+    string title = 3;
+    string summary =4;
+    string deadline =5;
+    string status =6;
 }
 
 message ByIdReq {
@@ -28,6 +31,6 @@ message ListReq {
 }
 
 message ListResp {
-    repeated User users = 1;
+    repeated Task tasks = 1;
     int64 count = 2;
 }
