@@ -8,6 +8,7 @@ service TaskService {
     rpc List(ListReq) returns (ListResp);
     rpc Update(Task) returns (Task);
     rpc Delete(ByIdReq) returns (EmptyResp);
+    rpc ListOverdue(EmptyResp) returns (ListResp);
 }
 
 message EmptyResp {}

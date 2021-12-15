@@ -2,78 +2,92 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/rustagram/template-service/genproto"
-	l "github.com/rustagram/template-service/pkg/logger"
-	"github.com/rustagram/template-service/storage"
+	pb "github.com/Jamshid-Ismoilov/todo-grpc/genproto"
+	l "github.com/Jamshid-Ismoilov/todo-grpc/pkg/logger"
+	"github.com/Jamshid-Ismoilov/todo-grpc/storage"
 )
 
-// UserService is an object that implements user interface.
-type UserService struct {
+// TaskService is an object that implements user interface.
+type TaskService struct {
 	storage storage.IStorage
 	logger  l.Logger
 }
 
-// NewUserService ...
-func NewUserService(storage storage.IStorage, log l.Logger) *UserService {
-	return &UserService{
+// NewTaskService ...
+func NewTaskService(storage storage.IStorage, log l.Logger) *TaskService {
+	return &TaskService{
 		storage: storage,
 		logger:  log,
 	}
 }
 
-func (s *UserService) Create(ctx context.Context, req *pb.User) (*pb.User, error) {
-	user, err := s.storage.User().Create(*req)
+func (s *TaskService) Create(ctx context.Context, req *pb.Task) (*pb.Task, error) {
+	task, err := s.storage.Task().Create(*req)
 	if err != nil {
-		s.logger.Error("failed to create user", l.Error(err))
-		return nil, status.Error(codes.Internal, "failed to create user")
+		s.logger.Error("failed to create task", l.Error(err))
+		return nil, status.Error(codes.Internal, "failed to create task")
 	}
 
-	return &user, nil
+	return &task, nil
 }
 
-func (s *UserService) Get(ctx context.Context, req *pb.ByIdReq) (*pb.User, error) {
-	user, err := s.storage.User().Get(req.GetId())
+func (s *TaskService) Get(ctx context.Context, req *pb.ByIdReq) (*pb.Task, error) {
+	task, err := s.storage.Task().Get(req.GetId())
 	if err != nil {
-		s.logger.Error("failed to get user", l.Error(err))
-		return nil, status.Error(codes.Internal, "failed to get user")
+		s.logger.Error("failed to get task", l.Error(err))
+		return nil, status.Error(codes.Internal, "failed to get task")
 	}
 
-	return &user, nil
+	return &task, nil
 }
 
-func (s *UserService) List(ctx context.Context, req *pb.ListReq) (*pb.ListResp, error) {
-	users, count, err := s.storage.User().List(req.Page, req.Limit)
+func (s *TaskService) List(ctx context.Context, req *pb.ListReq) (*pb.ListResp, error) {
+	tasks, count, err := s.storage.Task().List(req.Page, req.Limit)
 	if err != nil {
-		s.logger.Error("failed to list users", l.Error(err))
-		return nil, status.Error(codes.Internal, "failed to list users")
+		s.logger.Error("failed to list tasks", l.Error(err))
+		return nil, status.Error(codes.Internal, "failed to list tasks")
 	}
 
 	return &pb.ListResp{
-		Users: users,
+		Tasks: tasks,
 		Count: count,
 	}, nil
 }
 
-func (s *UserService) Update(ctx context.Context, req *pb.User) (*pb.User, error) {
-	user, err := s.storage.User().Update(*req)
+func (s *TaskService) Update(ctx context.Context, req *pb.Task) (*pb.Task, error) {
+	task, err := s.storage.Task().Update(*req)
 	if err != nil {
-		s.logger.Error("failed to update user", l.Error(err))
-		return nil, status.Error(codes.Internal, "failed to update user")
+		s.logger.Error("failed to update task", l.Error(err))
+		return nil, status.Error(codes.Internal, "failed to update task")
 	}
 
-	return &user, nil
+	return &task, nil
 }
 
-func (s *UserService) Delete(ctx context.Context, req *pb.ByIdReq) (*pb.EmptyResp, error) {
-	err := s.storage.User().Delete(req.Id)
+func (s *TaskService) Delete(ctx context.Context, req *pb.ByIdReq) (*pb.EmptyResp, error) {
+	err := s.storage.Task().Delete(req.Id)
 	if err != nil {
-		s.logger.Error("failed to delete user", l.Error(err))
-		return nil, status.Error(codes.Internal, "failed to delete user")
+		s.logger.Error("failed to delete task", l.Error(err))
+		return nil, status.Error(codes.Internal, "failed to delete task")
 	}
 
 	return &pb.EmptyResp{}, nil
+}
+
+func (s *TaskService) ListOverdue(ctx context.Context, req *pb.EmptyResp) (*pb.ListResp, error) {
+	tasks, count, err := s.storage.Task().ListOverdue(time.Now().String())
+	if err != nil {
+		s.logger.Error("failed to list tasks", l.Error(err))
+		return nil, status.Error(codes.Internal, "failed to list tasks")
+	}
+
+	return &pb.ListResp{
+		Tasks: tasks,
+		Count: count,
+	}, nil
 }

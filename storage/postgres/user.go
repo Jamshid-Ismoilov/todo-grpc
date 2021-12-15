@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 
@@ -81,26 +82,26 @@ func (r *taskRepo) List(page, limit int64) ([]*pb.Task, int64, error) {
 }
 
 func (r *taskRepo) Update(task pb.Task) (pb.Task, error) {
-	result, err := r.db.Exec(`UPDATE users SET first_name=$1, last_name=$2 WHERE id=$3`,
-		user.FirstName, user.LastName, user.Id)
+	result, err := r.db.Exec(`UPDATE tasks SET assignee=$1, title=$2, summary=$3, deadline=$4, status=$5 WHERE id=$6`,
+		task.Assignee, task.Title, task.Summary, task.Deadline, task.Status, task.Id)
 	if err != nil {
-		return pb.User{}, err
+		return pb.Task{}, err
 	}
 
 	if i, _ := result.RowsAffected(); i == 0 {
-		return pb.User{}, sql.ErrNoRows
+		return pb.Task{}, sql.ErrNoRows
 	}
 
-	user, err = r.Get(user.Id)
+	task, err = r.Get(task.Id)
 	if err != nil {
-		return pb.User{}, err
+		return pb.Task{}, err
 	}
 
-	return user, nil
+	return task, nil
 }
 
-func (r *userRepo) Delete(id int64) error {
-	result, err := r.db.Exec(`DELETE FROM users WHERE id=$1`, id)
+func (r *taskRepo) Delete(id int64) error {
+	result, err := r.db.Exec(`DELETE FROM tasks WHERE id=$1`, id)
 	if err != nil {
 		return err
 	}
@@ -110,4 +111,38 @@ func (r *userRepo) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func (r *taskRepo) ListOverdue(now time.Time) ([]*pb.Task, int64, error) {
+
+	rows, err := r.db.Queryx(
+		`SELECT id, assignee, title, summary, deadline, status FROM tasks where deadline >= $1`,
+		now)
+	if err != nil {
+		return nil, 0, err
+	}
+	if err = rows.Err(); err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close() // nolint:errcheck
+
+	var (
+		tasks []*pb.Task
+		task  pb.Task
+		count int64
+	)
+	for rows.Next() {
+		err = rows.Scan(&task.Id, &task.Assignee, &task.Title, &task.Summary, &task.Deadline, &task.Status)
+		if err != nil {
+			return nil, 0, err
+		}
+		tasks = append(tasks, &task)
+	}
+
+	err = r.db.QueryRow(`SELECT count(*) FROM tasks`).Scan(&count)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return tasks, count, nil
 }
