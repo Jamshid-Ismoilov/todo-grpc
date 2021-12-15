@@ -16,6 +16,6 @@
 # Dependency directories (remove the comment below to include it)
 
 #removing vendor file
-vendor/
+github.com/Jamshid-Ismoilov/todo-grpc/vendor/
 
 # NODE
