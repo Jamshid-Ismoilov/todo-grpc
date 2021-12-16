@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 
@@ -38,7 +39,7 @@ func (r *taskRepo) Get(id int64) (pb.Task, error) {
 	var task pb.Task
 	err := r.db.QueryRow(`
         SELECT id, assignee, title, summary, deadline, status FROM tasks
-        WHERE id=$1`, id).Scan(&task.Id, &task.Assignee, &task.Title, &task.Summary, &task.Deadline, &task.Status)
+        WHERE id=$1 and deleted_at=null`, id).Scan(&task.Id, &task.Assignee, &task.Title, &task.Summary, &task.Deadline, &task.Status)
 	if err != nil {
 		return pb.Task{}, err
 	}
@@ -49,7 +50,7 @@ func (r *taskRepo) Get(id int64) (pb.Task, error) {
 func (r *taskRepo) List(page, limit int64) ([]*pb.Task, int64, error) {
 	offset := (page - 1) * limit
 	rows, err := r.db.Queryx(
-		`SELECT id, assignee, title, summary, deadline, status FROM tasks LIMIT $1 OFFSET $2`,
+		`SELECT id, assignee, title, summary, deadline, status FROM tasks LIMIT $1 OFFSET $2 where deleted_at = null`,
 		limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -81,8 +82,8 @@ func (r *taskRepo) List(page, limit int64) ([]*pb.Task, int64, error) {
 }
 
 func (r *taskRepo) Update(task pb.Task) (pb.Task, error) {
-	result, err := r.db.Exec(`UPDATE tasks SET assignee=$1, title=$2, summary=$3, deadline=$4, status=$5 WHERE id=$6`,
-		task.Assignee, task.Title, task.Summary, task.Deadline, task.Status, task.Id)
+	result, err := r.db.Exec(`UPDATE tasks SET assignee=$1, title=$2, summary=$3, deadline=$4, status=$5, updated_at=$7 WHERE id=$6`,
+		task.Assignee, task.Title, task.Summary, task.Deadline, task.Status, task.Id, time.Now())
 	if err != nil {
 		return pb.Task{}, err
 	}
@@ -100,7 +101,7 @@ func (r *taskRepo) Update(task pb.Task) (pb.Task, error) {
 }
 
 func (r *taskRepo) Delete(id int64) error {
-	result, err := r.db.Exec(`DELETE FROM tasks WHERE id=$1`, id)
+	result, err := r.db.Exec(`UPDATE FROM tasks SET deleted_at = $2 WHERE id=$1`, id, time.Now())
 	if err != nil {
 		return err
 	}
