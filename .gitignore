@@ -1,5 +1,6 @@
  Binaries for programs and plugins
 *.exe
+*.bin
 *.exe~
 *.dll
 *.so
@@ -17,5 +18,10 @@
 
 #removing vendor file
 vendor/
+
+
+#removing vendor file
+bin/
+
 
 # NODE
