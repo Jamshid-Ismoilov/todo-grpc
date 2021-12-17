@@ -79,8 +79,8 @@ func (s *TaskService) Delete(ctx context.Context, req *pb.ByIdReq) (*pb.EmptyRes
 	return &pb.EmptyResp{}, nil
 }
 
-func (s *TaskService) ListOverdue(ctx context.Context, req *pb.EmptyResp) (*pb.ListResp, error) {
-	tasks, count, err := s.storage.Task().ListOverdue(time.Now().String())
+func (s *TaskService) ListOverdue(ctx context.Context, req *pb.ListReq) (*pb.ListResp, error) {
+	tasks, count, err := s.storage.Task().ListOverdue(req.Page, req.Limit, time.Now().String())
 	if err != nil {
 		s.logger.Error("failed to list tasks", l.Error(err))
 		return nil, status.Error(codes.Internal, "failed to list tasks")
