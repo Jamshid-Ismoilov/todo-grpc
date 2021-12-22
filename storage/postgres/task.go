@@ -132,8 +132,11 @@ func (r *taskRepo) Delete(id string) error {
 
 func (r *taskRepo) ListOverdue(page, limit int64, now string) ([]*pb.Task, int64, error) {
 	rows, err := r.db.Queryx(
-		`SELECT id, assignee, title, summary, deadline, status FROM tasks LIMIT $1 OFFSET $2 where deadline >= $1`,
-		now)
+		`SELECT id, assignee, title, summary, deadline, status FROM tasks where deadline <= $3 LIMIT $1 OFFSET $2;`,
+		page,
+		limit,
+		now,
+	)
 	if err != nil {
 		return nil, 0, err
 	}

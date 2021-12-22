@@ -11,7 +11,7 @@ import (
 	pb "github.com/Jamshid-Ismoilov/todo-grpc/genproto"
 )
 
-var client pb.UserServiceClient
+var client pb.TaskServiceClient
 
 func TestMain(m *testing.M) {
 	conn, err := grpc.Dial("localhost:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
