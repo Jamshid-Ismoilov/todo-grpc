@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 	"time"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/Jamshid-Ismoilov/todo-grpc/genproto"
 	l "github.com/Jamshid-Ismoilov/todo-grpc/pkg/logger"
 	"github.com/Jamshid-Ismoilov/todo-grpc/storage"
+	"github.com/gofrs/uuid"
 )
 
 // TaskService is an object that implements user interface.
@@ -27,6 +27,17 @@ func NewTaskService(storage storage.IStorage, log l.Logger) *TaskService {
 }
 
 func (s *TaskService) Create(ctx context.Context, req *pb.Task) (*pb.Task, error) {
+	
+	id, err := uuid.NewV4()
+	if err != nil {
+		s.logger.Error("failed while generating uuid", l.Error(err))
+		return nil, status.Error(codes.Internal, "failed generate uuid")
+	}
+	req.Id = id.String()
+
+	if req.GetCreatedAt() == "" {
+		req.CreatedAt = time.Now().String()
+	}
 	task, err := s.storage.Task().Create(*req)
 	if err != nil {
 		s.logger.Error("failed to create task", l.Error(err))

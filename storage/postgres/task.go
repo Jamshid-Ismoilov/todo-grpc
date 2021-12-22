@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"time"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 
@@ -19,15 +20,15 @@ func NewTaskRepo(db *sqlx.DB) *taskRepo {
 }
 
 func (r *taskRepo) Create(task pb.Task) (pb.Task, error) {
-	var id int64
+	var id string
 	err := r.db.QueryRow(`
-        INSERT INTO tasks(assignee, title, summary, deadline, status)
-        VALUES ($1,$2,$3, $4, $5) returning id`, task.Assignee, task.Title, task.Summary, task.Deadline, task.Status).Scan(&id)
+        INSERT INTO tasks(id, assignee, title, summary, deadline, status, created_at)
+        VALUES ($6, $1,$2,$3, $4, $5, $7) returning id`, task.Assignee, task.Title, task.Summary, task.Deadline, task.Status, task.Id, task.CreatedAt).Scan(&id)
 	if err != nil {
 		return pb.Task{}, err
 	}
-
 	task, err = r.Get(id)
+
 	if err != nil {
 		return pb.Task{}, err
 	}
@@ -35,14 +36,28 @@ func (r *taskRepo) Create(task pb.Task) (pb.Task, error) {
 	return task, nil
 }
 
-func (r *taskRepo) Get(id int64) (pb.Task, error) {
+func (r *taskRepo) Get(id string) (pb.Task, error) {
 	var task pb.Task
+	var updated sql.NullString
+
 	err := r.db.QueryRow(`
-        SELECT id, assignee, title, summary, deadline, status FROM tasks
-        WHERE id=$1 and deleted_at=null`, id).Scan(&task.Id, &task.Assignee, &task.Title, &task.Summary, &task.Deadline, &task.Status)
+        SELECT id, assignee, title, summary, deadline, status, created_at, updated_at FROM tasks
+        WHERE id=$1 and deleted_at is null`, id).Scan(
+			&task.Id, 
+			&task.Assignee, 
+			&task.Title, 
+			&task.Summary, 
+			&task.Deadline, 
+			&task.Status, 
+			&task.CreatedAt, 
+			&updated,
+		)
+	task.UpdatedAt = updated.String
+
 	if err != nil {
 		return pb.Task{}, err
 	}
+	fmt.Println("GET function")
 
 	return task, nil
 }
@@ -50,7 +65,7 @@ func (r *taskRepo) Get(id int64) (pb.Task, error) {
 func (r *taskRepo) List(page, limit int64) ([]*pb.Task, int64, error) {
 	offset := (page - 1) * limit
 	rows, err := r.db.Queryx(
-		`SELECT id, assignee, title, summary, deadline, status FROM tasks LIMIT $1 OFFSET $2 where deleted_at = null`,
+		`SELECT id, assignee, title, summary, deadline, status, created_at, updated_at FROM tasks LIMIT $1 OFFSET $2`,
 		limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -66,8 +81,10 @@ func (r *taskRepo) List(page, limit int64) ([]*pb.Task, int64, error) {
 		count int64
 	)
 	for rows.Next() {
-		err = rows.Scan(&task.Id, &task.Assignee, &task.Title, &task.Summary, &task.Deadline, &task.Status)
-		if err != nil {
+		var updated sql.NullString
+		err = rows.Scan(&task.Id, &task.Assignee, &task.Title, &task.Summary, &task.Deadline, &task.Status, &task.CreatedAt, &updated)
+		task.UpdatedAt = updated.String
+	if err != nil {
 			return nil, 0, err
 		}
 		tasks = append(tasks, &task)
@@ -77,7 +94,7 @@ func (r *taskRepo) List(page, limit int64) ([]*pb.Task, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-
+	fmt.Println(tasks)
 	return tasks, count, nil
 }
 
@@ -100,8 +117,8 @@ func (r *taskRepo) Update(task pb.Task) (pb.Task, error) {
 	return task, nil
 }
 
-func (r *taskRepo) Delete(id int64) error {
-	result, err := r.db.Exec(`UPDATE FROM tasks SET deleted_at = $2 WHERE id=$1`, id, time.Now())
+func (r *taskRepo) Delete(id string) error {
+	result, err := r.db.Exec(`UPDATE tasks SET deleted_at = $2 WHERE id=$1`, id, time.Now())
 	if err != nil {
 		return err
 	}
